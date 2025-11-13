@@ -1,7 +1,7 @@
 import os
 from keras.models import Model, load_model
 from keras.layers import Flatten, Dense
-from keras.applications.vgg16 import VGG16, preprocess_input
+from keras.applications.vgg16 import VGG16
 from tensorflow.keras.preprocessing.image import ImageDataGenerator
 from keras.preprocessing import image
 import numpy as np
@@ -62,14 +62,46 @@ test_set = test_datagen.flow_from_directory(
     class_mode='categorical'
 )
 
-# ✅ Train the model
+# ============================
+# ✅ TRAIN THE MODEL
+# ============================
+
 fitted_model = final_model.fit(
     training_set,
     validation_data=validation_set,
-    epochs=5,
+    epochs=2,
     steps_per_epoch=training_set.samples // training_set.batch_size,
     validation_steps=validation_set.samples // validation_set.batch_size
 )
 
-# ✅ Save the trained model
+# ============================
+# ✅ SAVE THE TRAINED MODEL
+# ============================
+
 final_model.save('pneumonia_model.keras')
+
+# ============================
+# 🔍 PREDICTION ON A TEST IMAGE (Corrected)
+# ============================
+
+# Load the saved model
+model = load_model('pneumonia_model.keras')
+
+# Path to a test image
+img_path = r"C:\chest_xray\test\PNEUMONIA\person29_virus_64.jpeg"
+
+# Load and preprocess the image
+img = image.load_img(img_path, target_size=(224, 224))
+img_array = image.img_to_array(img)
+img_array = img_array / 255.0        # ✔ Correct scaling matched with training
+img_array = np.expand_dims(img_array, axis=0)
+
+# Predict the class
+prediction = model.predict(img_array)
+
+# Map the result to class name
+labels = training_set.class_indices
+predicted_index = np.argmax(prediction)
+predicted_class = list(labels.keys())[predicted_index]
+
+print(f"\nPrediction for image '{img_path}': {predicted_class}")
